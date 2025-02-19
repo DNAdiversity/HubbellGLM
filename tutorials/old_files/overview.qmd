@@ -1,0 +1,134 @@
+---
+title: "Overview of HubbellGLM"
+format: html
+editor: visual
+---
+
+## Overview of HubbellGLM
+
+In this document we go through the HubbellGLM package. We begin by exploring the BarroColorado island dataset
+
+```{r}
+# Load the packages
+library(tidyverse)
+library(vegan)
+library(HubbellGLM)
+```
+
+```{r}
+# Load the data (this is BCI + BCI.env taken from the vegan package)
+data("BarroColorado"); data("BCI")
+head(BarroColorado)
+# EnvHet <- environmental heterogeneity (Gini) of habitat type in the grid
+# Habitat <- Habitat type (OldSlope, OldLow, OldHigh, Young, Swamp)
+# Stream <- Whether there is a river in the plot
+```
+
+```{r}
+# We can find the fisher's alpha for every location
+hist(fisher.alpha(BCI), breaks = 10)
+```
+
+```{r}
+# We can do a linear model using BCI as well
+max_EPPF_DP <- function(n, k) {
+  start <- 1 # Initialization of the maximization algorithm
+  out <- nlminb(
+    start = start,
+    function(param) -(k * log(param) - lgamma(param + n) + lgamma(param)),
+    lower = 1e-10, upper = Inf
+  )
+  return(out$par)
+}
+max_EPPF_DP <- Vectorize(FUN = max_EPPF_DP, vectorize.args = c("n", "k"))
+
+alpha_fisher <- fisher.alpha(BCI)
+alpha_dp <- max_EPPF_DP(rowSums(BCI), rowSums(BCI > 0))
+
+fitlm <- lm(log(alpha) ~ . -n-y, data = data.frame(alpha = alpha_dp, BarroColorado))
+summary(fitlm)
+plot(fitlm)
+```
+
+```{r}
+# Now, let's use the HubbellGLM
+fitHubbell <- HubbellGLM(cbind(n, y) ~ ., data = BarroColorado, control = glm.control(epsilon = 1e-12))
+summary(fitHubbell)
+```
+
+```{r}
+plot(predict(fitlm), predict(fitHubbell))
+abline(a = 0, b = 1)
+```
+
+```{r}
+max_EPPF_DP <- Vectorize(FUN = max_EPPF_DP, vectorize.args = c("n", "k"))
+
+simulate_data <- function(N, p, lambda){
+  X <- cbind(1, matrix(rnorm(N * (p - 1), sd = 10), nrow = N, ncol = p - 1))
+  beta <- c(2, rnorm(p-1, sd = 0.1))
+  alphas <- exp(X %*% beta)
+  n <- rpois(N, lambda = lambda)
+  y <- rDPspecies(alpha = alphas, size = n)
+  return(list(n = n, y = y, beta = beta, X = X, df = data.frame(n = n, y = y, X)))
+}
+
+
+# Try the function
+set.seed(42)
+data <- simulate_data(N = 1000, p = 10, lambda = 1000)
+data$beta
+
+n <- data$n
+y <- data$y
+y[y == 1] <- 2
+y[y == n] <- y[y == n] - 1
+#alpha_dp <- max_EPPF_DP(data$n, data$y)
+alpha_dp <- max_EPPF_DP(n, y)
+fitlm <- lm(log(alpha) ~ . -n-y-1, data = data.frame(alpha = alpha_dp, data$df %>%
+                                                        mutate(n = n, y = y)))
+#fitlm <- lm(log(alpha) ~ . -n-y-1, data = data.frame(alpha = alpha_dp, data$df))
+summary(fitlm)
+
+```
+
+
+```{r}
+fitHubbell <- HubbellGLM(cbind(n, y) ~.-1, data = data$df)
+summary(fitHubbell)
+```
+
+```{r}
+plot(predict(fitlm), predict(fitHubbell))
+
+plot(fitlm)
+plot(fitHubbell)
+```
+
+
+
+
+```{r}
+p <- 10
+N <- 1000
+beta <- rnorm(p)
+X <- matrix(rnorm(p * N), ncol = p)
+
+Y <- rpois(N, exp(1 + X %*% beta)) + 1
+
+lm(log(y) ~ ., data = data.frame(y = Y, X))
+
+glm(y ~ ., data = data.frame(y = Y, X), family = poisson)
+beta
+```
+
+
+
+
+
+
+
+
+
+
+
