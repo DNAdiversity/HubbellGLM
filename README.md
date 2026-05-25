@@ -1,9 +1,5 @@
 # HubbellGLM
 
-<!-- badges: start -->
-[![R-CMD-check](https://github.com/alessandrozito/HubbellGLM/workflows/R-CMD-check/badge.svg)](https://github.com/alessandrozito/HubbellGLM/actions)
-<!-- badges: end -->
-
 **HubbellGLM** implements Hubbell regression — a generalized linear model (GLM) for $\alpha$-diversity. 
 The model treats observed species richness as a random variable governed by the Dirichlet process 
  (i.e. the Ewens sampling formula) and uses standard GLM machinery to regress Hubbell's fundamental biodiversity 
