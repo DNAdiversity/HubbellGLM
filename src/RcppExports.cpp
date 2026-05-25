@@ -11,6 +11,60 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// polyseries_mean_single
+double polyseries_mean_single(int size, double alpha, double sigma);
+RcppExport SEXP _HubbellGLM_polyseries_mean_single(SEXP sizeSEXP, SEXP alphaSEXP, SEXP sigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type size(sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(polyseries_mean_single(size, alpha, sigma));
+    return rcpp_result_gen;
+END_RCPP
+}
+// polyseries_var_single
+double polyseries_var_single(int size, double alpha, double sigma);
+RcppExport SEXP _HubbellGLM_polyseries_var_single(SEXP sizeSEXP, SEXP alphaSEXP, SEXP sigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type size(sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(polyseries_var_single(size, alpha, sigma));
+    return rcpp_result_gen;
+END_RCPP
+}
+// polyseries_mean_grid
+NumericVector polyseries_mean_grid(NumericVector points_grid, int size, double alpha, double sigma);
+RcppExport SEXP _HubbellGLM_polyseries_mean_grid(SEXP points_gridSEXP, SEXP sizeSEXP, SEXP alphaSEXP, SEXP sigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type points_grid(points_gridSEXP);
+    Rcpp::traits::input_parameter< int >::type size(sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(polyseries_mean_grid(points_grid, size, alpha, sigma));
+    return rcpp_result_gen;
+END_RCPP
+}
+// polyseries_var_grid
+NumericVector polyseries_var_grid(NumericVector points_grid, int size, double alpha, double sigma);
+RcppExport SEXP _HubbellGLM_polyseries_var_grid(SEXP points_gridSEXP, SEXP sizeSEXP, SEXP alphaSEXP, SEXP sigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type points_grid(points_gridSEXP);
+    Rcpp::traits::input_parameter< int >::type size(sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(polyseries_var_grid(points_grid, size, alpha, sigma));
+    return rcpp_result_gen;
+END_RCPP
+}
 // polyseries_mean
 NumericVector polyseries_mean(NumericVector size, NumericVector alpha, double sigma);
 RcppExport SEXP _HubbellGLM_polyseries_mean(SEXP sizeSEXP, SEXP alphaSEXP, SEXP sigmaSEXP) {
@@ -87,6 +141,10 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_HubbellGLM_polyseries_mean_single", (DL_FUNC) &_HubbellGLM_polyseries_mean_single, 3},
+    {"_HubbellGLM_polyseries_var_single", (DL_FUNC) &_HubbellGLM_polyseries_var_single, 3},
+    {"_HubbellGLM_polyseries_mean_grid", (DL_FUNC) &_HubbellGLM_polyseries_mean_grid, 4},
+    {"_HubbellGLM_polyseries_var_grid", (DL_FUNC) &_HubbellGLM_polyseries_var_grid, 4},
     {"_HubbellGLM_polyseries_mean", (DL_FUNC) &_HubbellGLM_polyseries_mean, 3},
     {"_HubbellGLM_polyseries_var", (DL_FUNC) &_HubbellGLM_polyseries_var, 3},
     {"_HubbellGLM_DPspecies_cpp", (DL_FUNC) &_HubbellGLM_DPspecies_cpp, 2},

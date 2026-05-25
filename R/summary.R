@@ -1,5 +1,15 @@
 #' Summary function for the HubbellGLM method
-#' @export
+#'
+#' @param object A fitted \code{HubbellGLM} object.
+#' @param dispersion Optional dispersion parameter. If \code{NULL}, estimated
+#'   from the data.
+#' @param correlation Logical; if \code{TRUE}, print the correlation matrix of
+#'   the estimated coefficients. Default is \code{FALSE}.
+#' @param symbolic.cor Logical; if \code{TRUE}, print correlations as symbols.
+#'   Default is \code{FALSE}.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @exportS3Method base::summary
 summary.HubbellGLM <- function(object, dispersion = NULL,
                                    correlation = FALSE,
                                    symbolic.cor = FALSE,

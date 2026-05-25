@@ -135,6 +135,7 @@ glm.fit.hubbell <- function(x, y,
       w <- sqrt((weights[good] * mu.eta.val[good]^2) / variance(mu, size)[good])
       fit <- .Call(stats:::C_Cdqrls, x[good, , drop = FALSE] *
         w, z * w, min(1e-07, control$epsilon / 1000), check = FALSE)
+
       if (any(!is.finite(fit$coefficients))) {
         conv <- FALSE
         warning(gettextf(
@@ -289,8 +290,13 @@ glm.fit.hubbell <- function(x, y,
       sum(good) - fit$rank
     ))
   }
+
   wtdmu <- if (intercept) {
-    sum(weights * y) / sum(weights)
+    # All models must have the same alpha here. This is estimated
+    # through an appropriate function, which we specify now.
+    #sum(weights * y) / sum(weights)
+    beta_null <- estimateNullModel(y = y, n = size, sigma = sigma)
+    polyseries_mean(alpha = rep(exp(beta_null), length(size)), size = size, sigma = sigma)
   } else {
     linkinv(offset, size, sigma)
   }
@@ -320,3 +326,104 @@ glm.fit.hubbell <- function(x, y,
     boundary = boundary, name_size = name_size, name_y = name_y
   )
 }
+
+
+
+estimateNullModel <- function(y, n, sigma, tol = 1e-16, beta_start = NULL, maxiter = 10000){
+  g_inv <- function(mu_target, size, sigma) {
+    if (mu_target <= 1) {
+      return(1e-7)
+    } else if (mu_target >= size) {
+      return(1e8)
+    } else {
+      uniroot(function(x) polyseries_mean(size, x, sigma) - mu_target, c(1e-10, 1e8), tol = 1e-8)$root
+    }
+  }
+  g_inv <- Vectorize(g_inv, vectorize.args = c("mu_target", "size"))
+
+  loglik <- numeric(maxiter)
+  # Initialization
+  mu <- y
+  alpha <- g_inv(mu, n, sigma = sigma)
+  eta <- log(alpha)
+  w <- mu + alpha^2 * (trigamma(alpha + n) - trigamma(alpha))
+  z <- eta + (y - mu) / w
+
+  # First value of the likelihood
+  loglik[1] <- sum(y * eta - lgamma(alpha + n) + lgamma(alpha))
+  X <- matrix(1, nrow = length(y))
+  # Iterative procedure
+  for (t in 2:maxiter) {
+    # Find coefficients
+    beta <- solve(qr(crossprod(X * w, X)), crossprod(X * w, z))
+    eta <- c(X %*% beta)
+    exp_eta <- exp(eta)
+    # Calculate the mean
+    mu <- polyseries_mean(size = n, alpha = exp_eta, sigma = sigma)
+    # Calculate the variance of the distribution
+    alpha <- g_inv(mu, n, sigma = 0)
+    v <- alpha * (digamma(alpha + n) - digamma(alpha)) + alpha^2 * (trigamma(alpha + n) - trigamma(alpha))
+    # Calculate glm weights
+    w <- (1 / v) * polyseries_var(size =  n, alpha = exp_eta, sigma = sigma) ^ 2
+    # Calculate linearized response
+    z <- eta + (y - mu) / sqrt(w * v)
+    # Update loglikelihood
+    loglik[t] <- sum(y * log(alpha) - lgamma(alpha + n) + lgamma(alpha))
+    if (abs(loglik[t] - loglik[t - 1]) < tol) {
+      break
+    }
+    #stop("The algorithm has not reached convergence")
+  }
+  return(c(beta))
+}
+
+#' Variance-covariance matrix for a HubbellGLM fit, optionally adjusted for
+#' shared observations via a sandwich estimator.
+#'
+#' @param fit An object of class \code{HubbellGLM}.
+#' @param similarity An optional \eqn{n \times n} similarity matrix encoding
+#'   dependence between the \eqn{n} observations used to fit \code{fit}.
+#'   The diagonal must be 1 and all off-diagonal entries must be in
+#'   \eqn{[0, 1)}. If \code{NULL} (default), returns \code{vcov(fit)}.
+#'
+#' @return A \eqn{p \times p} variance-covariance matrix.
+#'
+#' @export
+vcov_shared <- function(fit, similarity = NULL) {
+  if (!inherits(fit, "HubbellGLM")) {
+    stop("'fit' must be an object of class 'HubbellGLM'")
+  }
+  if (is.null(similarity)) {
+    return(vcov(fit))
+  }
+  nobs <- nrow(model.matrix(fit))
+  if (!is.matrix(similarity)) {
+    stop("'similarity' must be a matrix")
+  }
+  if (!identical(dim(similarity), c(nobs, nobs))) {
+    stop(sprintf("'similarity' must be a %d x %d matrix matching the number of observations in 'fit'", n, n))
+  }
+  if (!isTRUE(all(diag(similarity) == 1))) {
+    stop("'similarity' must have 1 on the diagonal")
+  }
+  off_diag <- similarity[row(similarity) != col(similarity)]
+  if (any(off_diag < 0) || any(off_diag >= 1)) {
+    stop("off-diagonal entries of 'similarity' must be in [0, 1)")
+  }
+
+  sigmaF      <- fit$sigma
+  FisherI_inv <- vcov(fit)
+  X           <- model.matrix(fit)
+  y           <- fit$y
+  mu          <- fit$fitted.values
+  size        <- fit$size
+  alpha       <- inv_mean_dirichlet_process(mu_target = mu, size = size)
+  v           <- alpha * (digamma(alpha + size) - digamma(alpha)) +
+                 alpha^2 * (trigamma(alpha + size) - trigamma(alpha))
+  dlink       <- polyseries_var(size = size, alpha = exp(X %*% coef(fit)), sigma = sigmaF)
+  Scores      <- diag(c((y - mu) / v * dlink)) %*% X
+  meatD       <- crossprod(Scores, similarity %*% Scores)
+  FisherI_inv %*% meatD %*% FisherI_inv
+}
+
+

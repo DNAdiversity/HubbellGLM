@@ -1,0 +1,55 @@
+url: https://alessandrozito.github.io/HubbellGLM/
+
+template:
+  bootstrap: 5
+
+home:
+  title: "HubbellGLM: Covariate-dependent biodiversity via Hubbell regression"
+  description: >
+    Hubbell regression is a generalized linear model for alpha-diversity.
+    It links environmental covariates to Hubbell's fundamental biodiversity
+    number, which can be converted into Shannon, Simpson, and Hill indices.
+
+navbar:
+  structure:
+    left:  [intro, articles, reference]
+    right: [github]
+  components:
+    github:
+      icon: fab fa-github fa-lg
+      href: https://github.com/alessandrozito/HubbellGLM
+
+articles:
+  - title: "Tutorials"
+    navbar: ~
+    contents:
+      - bci_tutorial
+
+reference:
+  - title: "Main fitting function"
+    contents:
+      - HubbellGLM
+      - estimate_sigma
+      - step.hubbell
+  - title: "Prediction"
+    contents:
+      - predict_curve
+  - title: "Inference"
+    contents:
+      - summary.HubbellGLM
+      - vcov_shared
+  - title: "Family objects"
+    contents:
+      - hubbell
+      - quasihubbell
+  - title: "Link and distribution functions"
+    contents:
+      - make.link.hubbell
+      - inv_polyseries
+      - mean_dirichlet_process
+      - deriv_dirichlet_process
+      - inv_mean_dirichlet_process
+      - rDPspecies
+  - title: "Data"
+    contents:
+      - BarroColorado

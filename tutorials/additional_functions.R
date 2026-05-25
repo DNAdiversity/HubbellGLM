@@ -58,9 +58,10 @@ Hubbell_NR <- function(X, y, n, sigma = 0,
       t_vals <- beta/sqrt(diag(Fisher_info))
       p_vals <- 2 * pnorm(-abs(t_vals))
       # Output the results
-      results <- list(beta = cbind(beta = beta,
-                                   t_vals = t_vals,
-                                   p_vals = p_vals),
+      results <- list(beta = cbind("beta" = beta,
+                                   "se"= sqrt(diag(Fisher_info)),
+                                   "t_vals" = t_vals,
+                                   "p_vals" = p_vals),
                       vcov = Fisher_info,
                       loglik = loglik[t],
                       Convergence = cbind(Iteration = (1:t) - 1, Loglikelihood = loglik[1:t]))

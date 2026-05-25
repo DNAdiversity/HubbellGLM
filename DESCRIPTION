@@ -1,7 +1,7 @@
 Package: HubbellGLM
 Type: Package
-Title: Covariate-dependent biodiversity via the Hubbell regression
-Version: 0.1.0
+Title: Predicting biodiversity via the Hubbell regression
+Version: 1.0.0
 Authors@R: 
   c(person(given = "Alessandro",
            family = "Zito",
@@ -9,14 +9,17 @@ Authors@R:
            email = "azito@hsph.harvard.edu",
            comment = c(ORCID = "0000-0001-8515-6503")))
 Maintainer: The package maintainer <azito@hsph.harvard.edu>
-Description: Hubbell regression is a generalized linear model to calculate the covariate dependent biodiversity.
+Description: Hubbell regression is a generalized linear model to relate 
+             Hubbell'alpha diversity to environmental covariates. 
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.2.3
-Imports: stats, utils, stringr, vegan, tidyverse, Rcpp, knitr, RcppArmadillo
+Imports: stats, Rcpp, utils
 LinkingTo: Rcpp, RcppArmadillo
-Suggests: quarto
+URL: https://alessandrozito.github.io/HubbellGLM/, https://github.com/alessandrozito/HubbellGLM
+BugReports: https://github.com/alessandrozito/HubbellGLM/issues
+Suggests: quarto, knitr, rmarkdown
 VignetteBuilder: knitr
 Depends: 
     R (>= 4.0)
+Config/roxygen2/version: 8.0.0

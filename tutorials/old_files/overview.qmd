@@ -92,7 +92,6 @@ summary(fitlm)
 
 ```
 
-
 ```{r}
 fitHubbell <- HubbellGLM(cbind(n, y) ~.-1, data = data$df)
 summary(fitHubbell)
@@ -104,9 +103,6 @@ plot(predict(fitlm), predict(fitHubbell))
 plot(fitlm)
 plot(fitHubbell)
 ```
-
-
-
 
 ```{r}
 p <- 10
@@ -121,14 +117,3 @@ lm(log(y) ~ ., data = data.frame(y = Y, X))
 glm(y ~ ., data = data.frame(y = Y, X), family = poisson)
 beta
 ```
-
-
-
-
-
-
-
-
-
-
-

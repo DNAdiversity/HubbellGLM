@@ -12,6 +12,20 @@
   ...
 )
 }
+\arguments{
+\item{object}{A fitted \code{HubbellGLM} object.}
+
+\item{dispersion}{Optional dispersion parameter. If \code{NULL}, estimated
+from the data.}
+
+\item{correlation}{Logical; if \code{TRUE}, print the correlation matrix of
+the estimated coefficients. Default is \code{FALSE}.}
+
+\item{symbolic.cor}{Logical; if \code{TRUE}, print correlations as symbols.
+Default is \code{FALSE}.}
+
+\item{...}{Additional arguments (currently unused).}
+}
 \description{
 Summary function for the HubbellGLM method
 }

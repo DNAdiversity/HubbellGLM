@@ -158,6 +158,54 @@ plot(res1, res2)
 cbind(res1, res2)
 
 
+sigma <- 0.2
+n <- 1000
+alpha <- 10
+BAS::hypergeometric2F1(a = 1,
+                       b = 1/(1-sigma),
+                       c = (2-sigma)/(1-sigma),
+                       z = -(n-1)^(1-sigma)/alpha)
 
+library(gsl)
+
+gsl::hyperg_2F1(a = 1, b = 1/(1-sigma), c = (2-sigma)/(1-sigma), x = -(n-1)^(1-sigma)/alpha)
+
+library(gsl)
+Gauss2F1 <- function(a,b,c,x){
+  if (x >= 0 & x < 1) {
+    gsl::hyperg_2F1(a,b,c,x)
+    #BAS::hypergeometric2F1(a,b,c,x, log = FALSE)
+  } else {
+    gsl::hyperg_2F1(a,c-b,c,1-1/(1-x))/(1-x)^a
+    #BAS::hypergeometric2F1(a,c-b,c,1-1/(1-x), log = FALSE)/(1-x)^a
+  }
+}
+
+Gauss2F1_bas <- function(a,b,c,x){
+  if (x >= 0 & x < 1) {
+    #gsl::hyperg_2F1(a,b,c,x)
+    BAS::hypergeometric2F1(a,b,c,x, log = FALSE)
+  } else {
+    #gsl::hyperg_2F1(a,c-b,c,1-1/(1-x))/(1-x)^a
+    BAS::hypergeometric2F1(a,c-b,c,1-1/(1-x), log = FALSE)/(1-x)^a
+  }
+}
+
+
+sigma <- 0.00
+n <-1e6
+alpha <- 100
+(n-1) * Gauss2F1(a = 1,
+         b = 1/(1-sigma),
+         c = (2-sigma)/(1-sigma),
+         x = -(n-1)^(1-sigma)/alpha)
+
+(n-1) * Gauss2F1_bas(a = 1,
+         b = 1/(1-sigma),
+         c = (2-sigma)/(1-sigma),
+         x = -(n-1)^(1-sigma)/alpha) + 0.5
+
+polyseries_mean(n, alpha, sigma)
+alpha * (digamma(alpha + n) - digamma(alpha))
 
 

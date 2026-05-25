@@ -18,11 +18,18 @@
 #' @param y Same as \code{stats::glm}
 #' @param singular.ok Same as \code{stats::glm}
 #' @param contrasts Same as \code{stats::glm}
-#' @param ...Same as \code{stats::glm}
+#' @param ... Same as \code{stats::glm}
 #'
 #' @return An object of class \code{c('HubbellGLM', 'lm')}, which inherits from the class "lm"
+#' @importFrom stats .getXlevels BIC add.scope coef deviance drop.scope extractAIC
+#' @importFrom stats factor.scope fitted formula glm.fit is.empty.model
+#' @importFrom stats model.extract model.frame model.matrix model.offset
+#' @importFrom stats model.response model.weights na.pass napredict naresid
+#' @importFrom stats nlminb nobs pnorm predict predict.lm pt residuals
+#' @importFrom stats terms uniroot update update.formula vcov
+#' @importFrom utils flush.console
+#' @importFrom stats weights
 #' @export
-#'
 HubbellGLM <- function(formula,
                        family = hubbell(sigma = 0),
                        data,
@@ -141,7 +148,7 @@ HubbellGLM <- function(formula,
     data = data, offset = offset, control = control, method = method,
     contrasts = attr(X, "contrasts"),
     xlevels = .getXlevels(mt, mf)
-  )), class = c(fit$class, c("HubbellGLM", "lm")))
+  )), class = c(fit$class, c("HubbellGLM", "glm", "lm")))
 }
 
 
@@ -184,4 +191,121 @@ formula.HubbellGLM <- function(x, ...)
     form
   } else formula(x$terms)
 }
+
+
+#' Estimate the sigma parameter for a HubbellGLM model via BIC minimisation
+#'
+#' @param formula A formula specifying the model (same syntax as
+#'   \code{\link{HubbellGLM}}).
+#' @param data A \code{data.frame} containing the variables in \code{formula}.
+#' @param verbose Logical; if \code{TRUE} (default), prints the sigma value
+#'   evaluated at each iteration.
+#'
+#' @return A scalar: the value of \code{sigma} that minimises the BIC of the
+#'   fitted model.
+#'
+#' @export
+estimate_sigma <- function(formula, data, startpoint = 0, verbose = TRUE){
+  best_sigma <- nlminb(start = startpoint,
+                       objective = function(x){
+                         if (verbose) cat("Evaluating sigma = ", x, "\n")
+                         fit <- HubbellGLM(formula,
+                                           family = hubbell(link = "polyseries", sigma = x),
+                                           data = data)
+                         BIC(fit)
+                       }, lower = -Inf, upper = 0.9, control = list(rel.tol = 1e-5))$par
+  return(best_sigma)
+}
+
+
+
+# anova.HubbellGLM <- function (object, ..., dispersion = NULL, test = NULL)
+# {
+#
+#   doscore <- !is.null(test) && test == "Rao"
+#   varlist <- attr(object$terms, "variables")
+#   x <- if (n <- match("x", names(object), 0L)){
+#     object[[n]]
+#   } else {
+#     model.matrix(object)
+#   }
+#
+#   varseq <- attr(x, "assign")
+#   nvars <- max(0, varseq)
+#   resdev <- resdf <- NULL
+#   if (doscore) {
+#     score <- numeric(nvars)
+#     method <- object$method
+#     y <- cbind(object$size, object$y)
+#     fit <- eval(call(if (is.function(method)) "method" else method,
+#                      x = x[, varseq == 0, drop = FALSE], y = y,
+#                      weights = object$prior.weights,
+#                      start = object$start, offset = object$offset, family = object$family,
+#                      control = object$control))
+#     r <- fit$residuals
+#     w <- fit$weights
+#     icpt <- attr(object$terms, "intercept")
+#   }
+#   if (nvars > 1 || doscore) {
+#     method <- object$method
+#     y <- cbind(object$size, object$y)
+#     for (i in seq_len(max(nvars - 1L, 0))) {
+#       fit <- eval(call(if (is.function(method)) "method" else method,
+#                        x = x[, varseq <= i, drop = FALSE], y = y, weights = object$prior.weights,
+#                        start = object$start, offset = object$offset,
+#                        family = object$family, control = object$control))
+#       if (doscore) {
+#         zz <- eval(call(if (is.function(method)) "method" else method,
+#                         x = x[, varseq <= i, drop = FALSE], y = r,
+#                         weights = w, intercept = icpt))
+#         score[i] <- zz$null.deviance - zz$deviance
+#         r <- fit$residuals
+#         w <- fit$weights
+#       }
+#       resdev <- c(resdev, fit$deviance)
+#       resdf <- c(resdf, fit$df.residual)
+#     }
+#     if (doscore) {
+#       zz <- eval(call(if (is.function(method)) "method" else method,
+#                       x = x, y = r, weights = w, intercept = icpt))
+#       score[nvars] <- zz$null.deviance - zz$deviance
+#     }
+#   }
+#   resdf <- c(object$df.null, resdf, object$df.residual)
+#   resdev <- c(object$null.deviance, resdev, object$deviance)
+#   table <- data.frame(c(NA, -diff(resdf)), c(NA, pmax(0, -diff(resdev))),
+#                       resdf, resdev)
+#   tl <- attr(object$terms, "term.labels")
+#   if (length(tl) == 0L)
+#     table <- table[1, , drop = FALSE]
+#   dimnames(table) <- list(c("NULL", tl), c("Df", "Deviance",
+#                                            "Resid. Df", "Resid. Dev"))
+#   if (doscore)
+#     table <- cbind(table, Rao = c(NA, score))
+#   title <- paste0("Analysis of Deviance Table", "\n\nModel: ",
+#                   object$family$family, ", link: ", object$family$link,
+#                   "\n\nResponse: ", as.character(varlist[-1L])[1L], "\n\nTerms added sequentially (first to last)\n\n")
+#   df.dispersion <- Inf
+#   if (is.null(dispersion)) {
+#     dispersion <- summary(object)$dispersion
+#     if (!is.null(object$family$dispersion) && is.na(object$family$dispersion)) {
+#       df.dispersion <- object$df.residual
+#     }
+#   }
+#   if (!is.null(test)) {
+#     if (test == "F" && df.dispersion == Inf) {
+#       fam <- object$family$family
+#       if (fam == "binomial" || fam == "poisson")
+#         warning(gettextf("using F test with a '%s' family is inappropriate",
+#                          fam), domain = NA)
+#       else warning("using F test with a fixed dispersion is inappropriate")
+#     }
+#     table <- stat.anova(table = table, test = test, scale = dispersion,
+#                         df.scale = df.dispersion, n = NROW(x))
+#   }
+#   structure(table, heading = title, class = c("anova", "data.frame"))
+# }
+
+
+
 

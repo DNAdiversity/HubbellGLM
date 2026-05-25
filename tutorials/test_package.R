@@ -48,17 +48,17 @@ predict(out_hub, type = "response", newdata = BarroColorado[-train_index, ])
 # Run the method for a grid of sigma values, and pick the one
 # with the highest AIC (on full dataset)
 sigma_all <- seq(-3, 0.99, 0.05)
-aics <- numeric(length(sigma_all))
+bics <- numeric(length(sigma_all))
 for(i in 1:length(sigma_all)){
   print(sigma_all[i])
   # Run HubbellGLM
   out <- HubbellGLM(cbind(n, y) ~ .,
                     family = hubbell(sigma = sigma_all[i]),
                     data = BarroColorado)
-  aics[i] <- AIC(out)
+  bics[i] <- BIC(out)
 }
-plot(sigma_all, aics)
-best_sigma <- sigma_all[which.min(aics)]
+plot(sigma_all, bics)
+best_sigma <- sigma_all[which.min(bics)]
 
 # The lowest AIC appears to be happening with sigma = -1.2
 out_best <- HubbellGLM(cbind(n, y) ~ .,
@@ -68,8 +68,18 @@ family(out_best)
 summary(out_best)
 plot(predict(out_best, type = "response"), BarroColorado$y)
 
-plot(density(BarroColorado$y))
-lines(density(predict(out_best, type = "response")))
+out0 <- HubbellGLM(cbind(n, y) ~ .,
+                   family = hubbell(sigma = 0),
+                   data = BarroColorado)
+
+out02 <- HubbellGLM(cbind(n, y) ~ .,
+                   family = hubbell(sigma = 0.2),
+                   data = BarroColorado)
+
+
+plot(predict(out_best, type = "response"), predict(out_best, type = "response")-BarroColorado$y)
+points(predict(out0, type = "response"), predict(out0, type = "response")-BarroColorado$y, col = "red")
+points(predict(out02, type = "response"), predict(out02, type = "response")-BarroColorado$y, col = "blue")
 
 #---- Test now HubbellGLM vs linear model
 X <- model.matrix(cbind(n, y) ~ ., BarroColorado)
@@ -85,7 +95,7 @@ cbind("linar_model" = coef(linear_model), "glm" = coef(out_best))
 # We simulate data from the polyseries link, and check if the
 # AIC retrieves the correct model
 set.seed(10)
-sigma_true <- -1
+sigma_true <- 0
 data <- simulate_data(N = 1000, p = 10,
                       lambda = 1000,
                       sigma = sigma_true)
@@ -127,6 +137,164 @@ logliks <- sapply(sigma_all, function(sigma) {
 
 plot(sigma_all, logliks)
 abline(v = sigma_true)
-abline(v = sigma_all[which.min(aics)], col = "red")
+abline(v = sigma_all[which.max(logliks)], col = "red")
+
+
+
+# Try the quasihubbell
+out_hub <- HubbellGLM(cbind(n, y) ~ .,
+                       family = hubbell(sigma = 0),
+                       data = BarroColorado)
+summary(out_hub)
+sum(weights(out_hub, type = "working") * residuals(out_hub, type = "working")^2)/out_hub$df.residual
+
+out_quasihub <- HubbellGLM(cbind(n, y) ~ .,
+                       family = quasihubbell(sigma = 0),
+                       data = BarroColorado)
+summary(out_quasihub)
+summary(out_hub)
+fitted(out_quasihub)
+
+# Add lat and lon
+library(splines)
+set.seed(10)
+BarroColorado$lat <- sin(pi * sort(rnorm(50))) + rnorm(50)
+BarroColorado$lon <- sin(pi/2 * sort(rnorm(50))) + rnorm(50)
+plot(BarroColorado$lat, BarroColorado$lon)
+
+library(devtools)
+document()
+
+out_dp <- HubbellGLM(cbind(n, y) ~ .,
+                      family = hubbell(),
+                      data = BarroColorado)
+summary(out_dp)
+
+out_poly <- HubbellGLM(cbind(n, y) ~ .,
+                     family = hubbell(link = "polyseries", sigma = 0.4),
+                     data = BarroColorado)
+summary(out_poly)
+
+
+out_py <- HubbellGLM(cbind(n, y) ~ .,
+                       family = hubbell(link = "py", 0.19),
+                       data = BarroColorado)
+summary(out_py)
+
+
+
+out_quasihub <- HubbellGLM(cbind(n, y) ~ .,
+                      family = quasihubbell(sigma = 0),
+                      data = BarroColorado %>% select(-lat, -lon))
+summary(out_quasihub)
+
+cor(ns(BarroColorado$EnvHet, df = 3))
+
+
+
+#------------------------------------------------------------ Godambe
+# Source useful functions
+source("tutorials/additional_functions.R")
+
+#------------------------------------------------------------
+# Part 1 - test the package on the Barro Colorado island
+#------------------------------------------------------------
+# We will use the BarroColorado dataset
+#train_index <- sort(sample(1:nrow(BarroColorado), size = 40))
+#y <- BarroColorado$y#[train_index]
+#n <- BarroColorado$n#[train_index]
+#X <- model.matrix(cbind(n, y) ~ ., BarroColorado)#[train_index, ])
+
+y <- data$y
+n <- data$n
+X <- data$X
+
+# Test the functions with sigma = 0
+
+#----------- Tommi's formulation (canonical link)
+out_tommi <- fisher_NR(X = X, y = y, n = n)
+#----------- Ale's formulation (polyseries link)
+out_ale <- Hubbell_NR(X = X, y = y, n = n, sigma = 0)
+#----------- HubbellGLM package
+out_hub <- HubbellGLM(cbind(n, y) ~ ., family = hubbell(sigma = 0), data = data$df)#[train_index, ])
+out_quasihub <- HubbellGLM(cbind(n, y) ~ .-1, family = quasihubbell(sigma = 0), data = data$df)#[train_index, ])
+
+# Check if coefficients are the same
+cbind("tommi" = out_tommi$beta[, 1],
+      "ale" =  out_ale$beta[, 1],
+      "glm" = coef(out_hub))
+
+# Calculate the Godambe standard errors
+second_deriv <- function(alpha, n){
+  alpha * (digamma(alpha + n) - digamma(alpha)) + alpha^2 * (trigamma(alpha + n) - trigamma(alpha))
+}
+
+alpha <- c(exp(X %*% out_ale$beta[, 1]))
+LogLiks <- y * log(alpha) - lgamma(alpha + n) + lgamma(alpha)
+preds <- predict(out_hub, type = "response")
+
+# Calculate alpha
+alpha <- c(exp(X %*% out_ale$beta[, 1]))
+preds <- alpha * (digamma(alpha + n) - digamma(alpha))
+# Calculate J(theta)
+u_theta <- X * matrix(y - preds)[, rep(1, ncol(X))] # Gradients
+J_theta <- crossprod(u_theta)
+# Calculate H (theta)
+d2 <- alpha * (digamma(alpha + n) - digamma(alpha)) +
+  alpha^2 * (trigamma(alpha + n) - trigamma(alpha))
+H_theta <- crossprod(X, diag(d2) %*% X)
+# Calculate G
+G_theta <- H_theta %*% solve(J_theta) %*% H_theta
+# Calculate new t values and p values
+t_vals_cl <- out_ale$beta[, 1]/sqrt(diag(solve(G_theta)))
+p_vals_cl <- 2 * pnorm(-abs(t_vals_cl))
+
+res <- out_ale$beta
+colnames(res) <- c("beta", "t", "pval")
+cbind(res, "t_cl" = round(t_vals_cl, 5), "pval_cl" = round(p_vals_cl, 5))
+
+cbind("se" = out_ale$beta[, 2],
+      "se_cl" = sqrt(diag(solve(G_theta))))
+
+,
+      "se_quasi" = summary(out_quasihub)$coefficients[, 2])
+
+quasih <- HubbellGLM(f)
+
+coef(out_hub)/sqrt(diag(solve(G_theta)))
+
+
+# Simulate from a negative binomial with the same mean for fixed n.
+# Godambe should fix the problem
+
+
+G_theta <- H_theta %*% solve(J_theta) %*% H_theta
+G_theta_inv <- solve(G_theta)
+
+G_theta <- solve(J_theta)
+plot(vcov(out_hub), G_theta)
+
+t_vals <- coef(out_hub)/sqrt(diag(J_theta))
+p_vals <- 2 * pnorm(-abs(t_vals))
+round(p_vals, 5)
+summary(out_hub)
+
+out_hub$deviance
+coef(out_hub)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

@@ -59,7 +59,7 @@ HubbellGLM(
 
 \item{contrasts}{Same as \code{stats::glm}}
 
-\item{...Same}{as \code{stats::glm}}
+\item{...}{Same as \code{stats::glm}}
 }
 \value{
 An object of class \code{c('HubbellGLM', 'lm')}, which inherits from the class "lm"
