@@ -5,8 +5,7 @@ Stepwise model selection for HubbellGLM models
 ## Usage
 
 ``` r
-# S3 method for class 'hubbell'
-step(
+step.hubbell(
   object,
   scope,
   scale = 0,

@@ -18,3 +18,4 @@
 \description{
 Function to predict the response from a HubbellGLM model.
 }
+\keyword{internal}

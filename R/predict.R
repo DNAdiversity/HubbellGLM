@@ -1,5 +1,6 @@
 #' Function to predict the response from a HubbellGLM model.
-#' @export
+#' @exportS3Method
+#' @keywords internal
 predict.HubbellGLM <- function(
     object, newdata = NULL, type = c(
       "link", "response",
