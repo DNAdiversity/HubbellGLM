@@ -9,8 +9,6 @@
 - [`estimate_sigma()`](https://alessandrozito.github.io/HubbellGLM/reference/estimate_sigma.md)
   : Estimate the sigma parameter for a HubbellGLM model via BIC
   minimisation
-- [`step.hubbell()`](https://alessandrozito.github.io/HubbellGLM/reference/step.hubbell.md)
-  : Stepwise model selection for HubbellGLM models
 
 ## Prediction
 

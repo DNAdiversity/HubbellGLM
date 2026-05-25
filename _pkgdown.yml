@@ -30,7 +30,6 @@ reference:
     contents:
       - HubbellGLM
       - estimate_sigma
-      - step.hubbell
   - title: "Prediction"
     contents:
       - predict_curve

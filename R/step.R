@@ -12,8 +12,9 @@
 #' @param k Penalty multiplier for the number of parameters (2 for AIC).
 #' @param ... Additional arguments passed to the fitting function.
 #'
-#' @export
-step.hubbell <- function (object, scope, scale = 0, direction = c("both", "backward",
+#' @exportS3Method stats::step
+#' @keywords internal
+step.HubbellGLM <- function (object, scope, scale = 0, direction = c("both", "backward",
                                                                   "forward"), trace = 1, keep = NULL, steps = 1000, k = 2,
                           ...)
 {

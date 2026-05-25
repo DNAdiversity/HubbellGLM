@@ -451,9 +451,9 @@ round(rbind(AIC = aic_vals, BIC = bic_vals), 2)
 ```
 
 The model with the lowest AIC/BIC is preferred. Note that
-`step.HubbellGLM()` can also be called directly for automated
-backward/forward selection; see
-[`?step.hubbell`](https://alessandrozito.github.io/HubbellGLM/reference/step.hubbell.md).
+[`step.HubbellGLM()`](https://alessandrozito.github.io/HubbellGLM/reference/step.HubbellGLM.md)
+can also be called directly for automated backward/forward selection;
+see `?step.hubbell`.
 
 ### Estimate $\sigma$
 
