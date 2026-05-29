@@ -73,7 +73,7 @@ coeftest(fit, vcov. = vcov_fit)
 | `estimate_sigma()` | Estimate the polynomial link exponent $\sigma$ |
 | `predict()` | Predict richness at new sites |
 | `predict_curve()` | Species accumulation curve with standard errors |
-| `vcov_species()` | Jaccard-adjusted sandwich variance–covariance matrix |
+| `vcov_shared()` | Jaccard-adjusted sandwich variance–covariance matrix |
 
 ## Reference
 
